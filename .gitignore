@@ -1,1 +1,11 @@
+# Streamlit
 .streamlit/secrets.toml
+
+# Python
+__pycache__/
+*.py[cod]
+*.env
+
+# Data
+*.csv
+*.pickle
