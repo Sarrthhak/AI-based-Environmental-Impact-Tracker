@@ -1,169 +1,131 @@
 import streamlit as st
 import pandas as pd
-import plotly.express as px
 import numpy as np
-from sklearn.ensemble import RandomForestRegressor
 import folium
 from streamlit_folium import folium_static
-import pickle
-import os
+from geopy.geocoders import Nominatim
+import plotly.express as px
 
-# ======================
-# CONFIGURATION
-# ======================
+# App Config
 st.set_page_config(
     page_title="AI Environmental Impact Tracker",
     page_icon="🌍",
     layout="wide"
 )
 
-# Load secrets (API keys)
-WEATHER_API_KEY = st.secrets.get("OPENWEATHER_API_KEY", "")
+# Title
+st.title("🌍 AI-Powered Environmental Impact Tracker")
 
-# ======================
-# CACHED FUNCTIONS
-# ======================
-@st.cache_data
-def load_model():
-    """Load pre-trained AI model"""
-    try:
-        # Replace with your actual model file
-        # model = pickle.load(open('model.pkl', 'rb'))
-        # Mock model for demo:
-        X = np.random.rand(100, 3) * 100
-        y = X.sum(axis=1) * 10
-        return RandomForestRegressor().fit(X, y)
-    except Exception as e:
-        st.error(f"Model loading failed: {e}")
-        return None
-
-# ======================
-# SIDEBAR INPUTS
-# ======================
+# Sidebar - User Inputs
 with st.sidebar:
-    st.header("🌱 Your Carbon Profile")
+    st.header("Your Carbon Profile")
     
-    # Activity Inputs
-    transport_type = st.selectbox(
-        "Transport Mode",
-        ["Car", "Bus", "Train", "Bicycle"]
+    # Transport
+    transport_mode = st.selectbox(
+        "Primary Transport Mode",
+        ["Car", "Bus", "Train", "Bicycle", "Walking"]
     )
-    distance_km = st.slider("Daily Distance (km)", 0, 200, 10)
+    distance = st.slider("Daily Distance (km)", 0, 100, 10)
     
-    # Energy Inputs
-    energy_kwh = st.number_input("Monthly Energy (kWh)", min_value=0, value=200)
+    # Energy
+    energy = st.number_input("Monthly Energy Usage (kWh)", min_value=0, value=300)
+    
+    # Location
+    location = st.text_input("Your City", "London")
     
     # Advanced
     with st.expander("Advanced Settings"):
-        diet_type = st.selectbox(
-            "Diet Preference",
-            ["Omnivore", "Vegetarian", "Vegan"]
+        diet = st.selectbox(
+            "Diet Type",
+            ["Omnivore", "Vegetarian", "Vegan"],
+            index=0
         )
 
-# ======================
-# AI PREDICTION ENGINE
-# ======================
-def predict_impact(model, inputs):
-    """Run AI prediction with user inputs"""
-    try:
-        # Convert inputs to model format
-        diet_map = {"Omnivore": 2, "Vegetarian": 1, "Vegan": 0}
-        transport_map = {"Car": 3, "Bus": 2, "Train": 1, "Bicycle": 0}
-        
-        features = np.array([[
-            distance_km,
-            energy_kwh,
-            diet_map[inputs['diet']],
-            transport_map[inputs['transport']]
-        ]])
-        
-        return model.predict(features)[0]
-    except Exception as e:
-        st.error(f"Prediction failed: {e}")
-        return 0.0
-
-# ======================
-# MAIN DASHBOARD
-# ======================
-model = load_model()
-
-# Header
-st.title("🌍 AI Environmental Impact Tracker")
-st.markdown("""Track your carbon footprint with AI-powered insights""")
-
-# Prediction Card
-col1, col2 = st.columns(2)
-with col1:
-    if model:
-        prediction = predict_impact(model, {
-            "diet": diet_type,
-            "transport": transport_type
-        })
-        
-        st.metric(
-            label="Estimated Annual CO₂ Impact",
-            value=f"{prediction:.2f} kg",
-            delta="-5% vs average" if prediction < 1500 else "+10% vs average"
-        )
-        
-        # Recommendations
-        if prediction > 2000:
-            st.error("🚨 High Impact! Try reducing car usage.")
-        elif prediction > 1500:
-            st.warning("⚠️ Moderate Impact. Consider plant-based diet options.")
-        else:
-            st.success("✅ Sustainable Lifestyle!")
-
-# Visualization
-with col2:
-    impact_data = pd.DataFrame({
-        "Category": ["Transport", "Energy", "Diet"],
-        "Impact": [
-            distance_km * (0.5 if transport_type == "Car" else 0.2),
-            energy_kwh * 0.3,
-            500 if diet_type == "Omnivore" else 200
-        ]
-    })
+# Calculate Carbon Footprint (Mock AI)
+def calculate_footprint(transport, dist, energy_use, diet_type):
+    # Simple calculation (replace with your AI model)
+    transport_factors = {"Car": 0.3, "Bus": 0.1, "Train": 0.05, "Bicycle": 0.01, "Walking": 0}
+    diet_factors = {"Omnivore": 2.5, "Vegetarian": 1.5, "Vegan": 1.0}
     
-    fig = px.pie(
-        impact_data,
-        values="Impact",
-        names="Category",
-        hole=0.3,
-        color_discrete_sequence=px.colors.sequential.Viridis
-    )
+    transport_co2 = dist * 365 * transport_factors[transport]
+    energy_co2 = energy_use * 0.5  # kg per kWh
+    diet_co2 = diet_factors[diet_type] * 365
+    
+    return transport_co2 + energy_co2 + diet_co2
+
+# Get Coordinates for Map
+def get_coordinates(city):
+    geolocator = Nominatim(user_agent="env_app")
+    location = geolocator.geocode(city)
+    if location:
+        return [location.latitude, location.longitude]
+    return [51.5074, -0.1278]  # Default to London
+
+# Calculations
+total_co2 = calculate_footprint(transport_mode, distance, energy, diet)
+co2_breakdown = {
+    "Transport": distance * 365 * {"Car": 0.3, "Bus": 0.1, "Train": 0.05, "Bicycle": 0.01, "Walking": 0}[transport_mode],
+    "Energy": energy * 0.5,
+    "Diet": {"Omnivore": 2.5, "Vegetarian": 1.5, "Vegan": 1.0}[diet] * 365
+}
+
+# Dashboard Layout
+col1, col2 = st.columns(2)
+
+with col1:
+    st.metric("Annual CO₂ Footprint", f"{total_co2:,.0f} kg")
+    
+    # Recommendations
+    if total_co2 > 10000:
+        st.error("🚨 High Impact Area - Consider reducing car and meat consumption")
+    elif total_co2 > 5000:
+        st.warning("⚠️ Moderate Impact - Try using public transport more often")
+    else:
+        st.success("✅ Sustainable Lifestyle!")
+
+with col2:
+    # Impact Breakdown Chart
+    df = pd.DataFrame({
+        "Category": list(co2_breakdown.keys()),
+        "CO2 (kg)": list(co2_breakdown.values())
+    })
+    fig = px.pie(df, values="CO2 (kg)", names="Category", hole=0.3)
     st.plotly_chart(fig, use_container_width=True)
 
-# ======================
-# MAP VISUALIZATION
-# ======================
-if st.checkbox("Show Regional Impact Data"):
-    st.subheader("Pollution Hotspots")
+# Map Visualization
+st.subheader("Environmental Impact Map")
+try:
+    coords = get_coordinates(location)
+    m = folium.Map(location=coords, zoom_start=10)
     
-    # Example map centered on user's country
-    m = folium.Map(location=[20.5937, 78.9629], zoom_start=5)  # India default
-    
-    # Add markers (replace with real data)
+    # Add markers (example data)
     folium.Marker(
-        location=[19.0760, 72.8777],  # Mumbai
-        tooltip="High Emission Zone",
-        icon=folium.Icon(color="red")
+        coords,
+        tooltip=f"Your Location: {location}",
+        icon=folium.Icon(color="green")
     ).add_to(m)
     
+    # Add pollution hotspots (mock data)
+    for i in range(3):
+        folium.Marker(
+            [coords[0] + np.random.uniform(-0.1, 0.1), 
+             coords[1] + np.random.uniform(-0.1, 0.1)],
+            tooltip="Pollution Hotspot",
+            icon=folium.Icon(color="red")
+        ).add_to(m)
+    
     folium_static(m, width=800)
+except Exception as e:
+    st.warning(f"Map could not be loaded: {str(e)}")
 
-# ======================
-# DATA EXPORT
-# ======================
+# Data Export
 st.download_button(
-    label="📥 Download Your Report",
-    data=impact_data.to_csv(index=False),
-    file_name="environmental_impact_report.csv",
+    label="📥 Download Your Impact Report",
+    data=df.to_csv(index=False),
+    file_name="environmental_impact.csv",
     mime="text/csv"
 )
 
-# ======================
-# FOOTER
-# ======================
+# Footer
 st.markdown("---")
-st.caption("♻️ Made with Streamlit | AI Model v1.0")
+st.caption("♻️ Sustainable AI App | v1.0")
