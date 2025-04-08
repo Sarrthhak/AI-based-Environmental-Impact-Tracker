@@ -1,64 +1,89 @@
-# eco_tracker.py
 import streamlit as st
-import openai
-import pandas as pd
 import os
+import sys
 
-# Initialize OpenAI (you'll add your key later)
-openai.api_key = st.secrets.get("OPENAI_KEY") or os.environ.get("OPENAI_KEY")
+# --- Initial Setup ---
+st.set_page_config(page_title="🌱 Eco Tracker", page_icon="🌍")
 
-# Sample data
-activities = [
-    {"name": "Bike to work", "completed": True, "impact": 3.2},
-    {"name": "Meat-free day", "completed": True, "impact": 2.5},
-    {"name": "Recycle waste", "completed": False, "impact": 1.0}
-]
+# --- Package Installation Check ---
+try:
+    import openai
+    import pandas as pd
+except ImportError:
+    st.error("""
+    Missing required packages. Please ensure your requirements.txt contains:
+    streamlit, openai, pandas
+    """)
+    if st.button("Attempt Auto-install (may require redeploy)"):
+        os.system(f"{sys.executable} -m pip install openai pandas")
+        st.rerun()
+    st.stop()
 
-# AI Suggestion Generator
-def get_ai_suggestions(user_activities):
-    prompt = f"""
-    Generate 3 personalized eco-suggestions based on these activities: 
-    {user_activities}. 
-    Format as: Suggestion|Impact Level|Category
-    Example: Use reusable bags|High|Waste
-    """
-    
-    response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
-        messages=[{"role": "user", "content": prompt}]
+# --- Secure API Key Loading ---
+def load_api_key():
+    # Try all possible key locations
+    key = (
+        st.secrets.get("OPENAI_KEY") or          # Streamlit Cloud secrets
+        os.environ.get("OPENAI_KEY") or          # Environment variables
+        st.session_state.get("temp_key")         # Temporary user input
     )
-    return [s.split('|') for s in response.choices[0].message.content.split('\n')]
+    
+    if not key:
+        with st.sidebar:
+            st.warning("API key not configured")
+            temp_key = st.text_input(
+                "Enter OpenAI Key (temporary)", 
+                type="password",
+                help="For testing only - configure secrets for production"
+            )
+            if temp_key:
+                st.session_state.temp_key = temp_key
+                st.rerun()
+        st.stop()
+    return key
 
-# Main App
-st.title("🌱 Eco Activity Tracker")
+openai.api_key = load_api_key()
 
-# Activity Tracker
-st.header("Your Activities")
-for i, activity in enumerate(activities):
-    col1, col2 = st.columns([3,1])
-    with col1:
-        st.checkbox(activity["name"], value=activity["completed"], key=f"activity_{i}")
-    with col2:
-        st.metric("CO₂ Saved", f"{activity['impact']} kg")
+# --- Main App ---
+def main():
+    st.title("🌍 Eco Activity Tracker")
+    
+    # Sample data storage
+    if 'activities' not in st.session_state:
+        st.session_state.activities = [
+            {"name": "Bike to work", "completed": True, "impact": 3.2},
+            {"name": "Meat-free day", "completed": False, "impact": 2.5}
+        ]
+    
+    # Activity List
+    st.header("Your Activities")
+    for i, activity in enumerate(st.session_state.activities):
+        cols = st.columns([3, 1, 1])
+        with cols[0]:
+            st.checkbox(
+                activity["name"],
+                value=activity["completed"],
+                key=f"activity_{i}",
+                on_change=lambda i=i: toggle_activity(i)
+            )
+        with cols[1]:
+            st.metric("CO₂ Saved", f"{activity['impact']} kg")
+    
+    # Add New Activity
+    with st.expander("➕ Add New Activity"):
+        with st.form("new_activity"):
+            name = st.text_input("Activity Name")
+            impact = st.number_input("CO₂ Impact (kg)", min_value=0.0, step=0.1)
+            if st.form_submit_button("Add"):
+                st.session_state.activities.append({
+                    "name": name,
+                    "completed": False,
+                    "impact": impact
+                })
+                st.rerun()
 
-# AI Suggestions
-if st.button("Get AI Suggestions"):
-    suggestions = get_ai_suggestions([a["name"] for a in activities])
-    st.header("🤖 AI Recommendations")
-    for title, impact, category in suggestions:
-        with st.expander(f"{title} ({category})"):
-            st.write(f"Impact: {impact}")
-            if st.button("Apply", key=title):
-                activities.append({"name": title, "completed": False, "impact": 0})
-                st.success("Added to your activities!")
+def toggle_activity(index):
+    st.session_state.activities[index]["completed"] = not st.session_state.activities[index]["completed"]
 
-# Add New Activity
-with st.form("new_activity"):
-    st.text_input("Activity Name", key="new_name")
-    st.number_input("CO₂ Impact (kg)", key="new_impact")
-    if st.form_submit_button("Add Activity"):
-        activities.append({
-            "name": st.session_state.new_name,
-            "completed": False,
-            "impact": st.session_state.new_impact
-        })
+if __name__ == "__main__":
+    main()
