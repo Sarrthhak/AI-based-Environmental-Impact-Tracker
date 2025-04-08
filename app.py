@@ -1,6 +1,7 @@
 import streamlit as st
 import os
 import sys
+import json
 
 # --- Initial Setup ---
 st.set_page_config(page_title="🌱 Eco Tracker", page_icon="🌍")
@@ -44,6 +45,31 @@ def load_api_key():
 
 openai.api_key = load_api_key()
 
+def get_ai_suggestions(existing_activities):
+    """Get personalized eco-tips from OpenAI"""
+    try:
+        prompt = f"""
+        Suggest 3 new eco-friendly activities based on these existing ones: 
+        {[a['name'] for a in existing_activities]}.
+        For each suggestion, provide:
+        - A short title (max 5 words)
+        - Estimated CO₂ savings in kg (as number)
+        - Difficulty level (Easy/Medium/Hard)
+        
+        Format as JSON: {{"suggestions": [{{"title": "...", "savings": x, "difficulty": "..."}}]}}
+        """
+        
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.7,
+            response_format={"type": "json_object"}
+        )
+        return json.loads(response.choices[0].message.content)
+    except Exception as e:
+        st.error(f"AI suggestion failed: {str(e)}")
+        return {"suggestions": []}
+
 # --- Main App ---
 def main():
     st.title("🌍 Eco Activity Tracker")
@@ -68,19 +94,50 @@ def main():
             )
         with cols[1]:
             st.metric("CO₂ Saved", f"{activity['impact']} kg")
-    
-    # Add New Activity
+
+    # AI Suggestions Section
+    st.header("🤖 AI Recommendations")
+    if st.button("Get Personalized Tips"):
+        with st.spinner("Analyzing your habits..."):
+            ai_response = get_ai_suggestions(st.session_state.activities)
+            
+        for suggestion in ai_response["suggestions"]:
+            with st.expander(f"✨ {suggestion['title']} ({suggestion['difficulty']})"):
+                st.metric("Estimated Savings", f"{suggestion['savings']} kg CO₂")
+                if st.button("Add This", key=suggestion["title"]):
+                    st.session_state.activities.append({
+                        "name": suggestion["title"],
+                        "completed": False,
+                        "impact": suggestion["savings"]
+                    })
+                    st.rerun()
+        
     with st.expander("➕ Add New Activity"):
-        with st.form("new_activity"):
-            name = st.text_input("Activity Name")
+    with st.form("new_activity"):
+        name = st.text_input("Activity Name (e.g. 'Use reusable bags')")
+        
+        # Let AI estimate impact if unknown
+        if st.toggle("Calculate impact automatically"):
+            with st.spinner("Estimating CO₂ impact..."):
+                try:
+                    prompt = f"Estimate CO₂ savings in kg (as number only) for: {name}"
+                    impact = float(openai.Completion.create(
+                        model="text-davinci-003",
+                        prompt=prompt,
+                        max_tokens=10
+                    ).choices[0].text.strip())
+                except:
+                    impact = 0.0
+        else:
             impact = st.number_input("CO₂ Impact (kg)", min_value=0.0, step=0.1)
-            if st.form_submit_button("Add"):
-                st.session_state.activities.append({
-                    "name": name,
-                    "completed": False,
-                    "impact": impact
-                })
-                st.rerun()
+            
+        if st.form_submit_button("Add"):
+            st.session_state.activities.append({
+                "name": name,
+                "completed": False,
+                "impact": impact
+            })
+            st.rerun()
 
 def toggle_activity(index):
     st.session_state.activities[index]["completed"] = not st.session_state.activities[index]["completed"]
