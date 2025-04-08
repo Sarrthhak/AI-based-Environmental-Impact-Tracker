@@ -4,7 +4,7 @@ import openai
 import pandas as pd
 
 # Initialize OpenAI (you'll add your key later)
-openai.api_key = st.secrets["OPENAI_KEY"]
+openai.api_key = st.secrets["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"]
 
 # Sample data
 activities = [
