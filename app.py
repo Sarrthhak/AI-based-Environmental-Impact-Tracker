@@ -2,9 +2,10 @@
 import streamlit as st
 import openai
 import pandas as pd
+import os
 
 # Initialize OpenAI (you'll add your key later)
-openai.api_key = st.secrets["OPENAI_KEY"]
+openai.api_key = st.secrets.get("OPENAI_KEY") or os.environ.get("OPENAI_KEY")
 
 # Sample data
 activities = [
