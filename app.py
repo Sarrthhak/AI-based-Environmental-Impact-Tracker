@@ -5,18 +5,18 @@ from dotenv import load_dotenv
 import google.generativeai as genai
 
 # Load environment variables
-st.write("ALL SECRETS:", list(st.secrets.keys()))
+st.write("RAW SECRETS DUMP:", st.secrets)  # Nuclear verification
 
-# Bulletproof key access
 try:
     api_key = st.secrets["GEMINI_API_KEY"]
-    st.success(f"✅ Key loaded successfully (first 4 chars: {api_key[:4]})")
-except KeyError:
-    st.error("""
-    ❌ Missing API key! Verify:
-    1. You added it in Streamlit's 'Secrets' tab
-    2. Used the EXACT name 'GEMINI_API_KEY'
-    3. Saved and redeployed
+    st.success(f"✅ Key loaded: {api_key[:4]}...{api_key[-4:]}")
+except Exception as e:
+    st.error(f"""
+    ❌ CRITICAL ERROR: {str(e)}
+    Verify:
+    1. Secret name is EXACTLY 'GEMINI_API_KEY' (case-sensitive)
+    2. You clicked 'Save' after editing secrets
+    3. You redeployed after saving
     """)
     st.stop()
 
