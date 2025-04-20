@@ -5,8 +5,7 @@ from dotenv import load_dotenv
 import google.generativeai as genai
 
 # Load environment variables
-load_dotenv()
-api_key = os.getenv("GEMINI_API_KEY")
+api_key = st.secrets["GEMINI_API_KEY"]  # Streamlit's secure secret
 
 if not api_key:
     st.error("❌ GEMINI_API_KEY not found in your .env file.")
