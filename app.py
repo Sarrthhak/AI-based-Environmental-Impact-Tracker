@@ -5,16 +5,19 @@ from dotenv import load_dotenv
 import google.generativeai as genai
 
 # Load environment variables
-st.write("TEST SECRETS:", st.secrets)  # Debug line - shows ALL secrets
-try:
-    api_key = st.secrets["GEMINI_API_KEY"]
-except KeyError:
-    st.error("🔑 API key missing! Please add it in Streamlit's secrets.")
-    st.stop()  # This prevents the app from running without a key
+# DEBUG: Confirm secret is loaded (remove after testing)
+st.write("SECRETS VERIFICATION:", st.secrets["GEMINI_API_KEY"][:4] + "..." + st.secrets["GEMINI_API_KEY"][-4:])
 
-if not api_key:
-    st.error("❌ GEMINI_API_KEY not found in your .env file.")
+# Key validation with proper error handling
+try:
+    api_key = st.secrets["GEMINI_API_KEY"].strip()  # Remove hidden whitespace
+    if not api_key.startswith("AIzaSy"):
+        st.error("❌ Invalid API key format. Keys start with 'AIzaSy'")
+        st.stop()
+except Exception as e:
+    st.error(f"🔧 Configuration error: {str(e)}")
     st.stop()
+
 
 # Configure Gemini client
 genai.configure(api_key=api_key)
