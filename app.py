@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 import google.generativeai as genai
 
 # Load environment variables
+st.write("TEST SECRETS:", st.secrets)  # Debug line - shows ALL secrets
 try:
     api_key = st.secrets["GEMINI_API_KEY"]
 except KeyError:
