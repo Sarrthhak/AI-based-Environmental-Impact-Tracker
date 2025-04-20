@@ -16,7 +16,7 @@ user_input = st.text_input("💬 Enter your question:")
 # OpenAI call
 def get_response(prompt):
     response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",  # or "gpt-4"
+        model="gpt-3.5-turbo",  # or "gpt-4" if available
         messages=[
             {"role": "system", "content": "You are a helpful assistant that gives advice on reducing environmental impact, energy saving, and sustainable living."},
             {"role": "user", "content": prompt}
