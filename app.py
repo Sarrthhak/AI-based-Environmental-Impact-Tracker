@@ -5,20 +5,15 @@ from dotenv import load_dotenv
 import google.generativeai as genai
 
 # Load environment variables
-st.write("RAW SECRETS DUMP:", st.secrets)  # Nuclear verification
+# Debug: List ALL available secrets
+st.write("SECRETS KEYS:", list(st.secrets.keys()))
 
-try:
+# Access key
+if "GEMINI_API_KEY" in st.secrets:
     api_key = st.secrets["GEMINI_API_KEY"]
-    st.success(f"✅ Key loaded: {api_key[:4]}...{api_key[-4:]}")
-except Exception as e:
-    st.error(f"""
-    ❌ CRITICAL ERROR: {str(e)}
-    Verify:
-    1. Secret name is EXACTLY 'GEMINI_API_KEY' (case-sensitive)
-    2. You clicked 'Save' after editing secrets
-    3. You redeployed after saving
-    """)
-    st.stop()
+    st.success(f"Key found! Starts with: {api_key[:4]}...")
+else:
+    st.error("Key missing! Check Streamlit's secrets panel.")
 
 # Configure Gemini client
 genai.configure(api_key=api_key)
