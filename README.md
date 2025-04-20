@@ -1,18 +1,17 @@
-# AI-Based Environmental Impact Tracker
+# 🌿 AI-Based Environmental Impact Tracker
 
-This Streamlit app helps users calculate their **weekly carbon footprint** based on inputs like electricity, travel, meat consumption, water, and gas usage.
+This is a Streamlit chatbot app that uses OpenAI to help users track and reduce their environmental impact.
 
-### ⚙️ How it Works:
-- Takes weekly input
-- Calculates emissions using standard CO₂ factors
-- Displays pie chart of impact
-- Gives smart suggestions to reduce your footprint
+## 💡 Features
 
-### Tech Stack
-- Python
-- Streamlit
-- Matplotlib
+- Ask eco-related questions
+- Get suggestions to reduce your carbon footprint
+- Learn about sustainable habits
 
-### To Run Locally:
-```bash
-streamlit run app.py
+## 🚀 How to Run Locally
+
+1. Clone the repo
+2. Install dependencies:
+
+   ```bash
+   pip install -r requirements.txt
