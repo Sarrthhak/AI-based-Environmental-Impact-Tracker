@@ -16,44 +16,127 @@ if not api_key:
 genai.configure(api_key=api_key)
 model = genai.GenerativeModel(model_name="models/gemini-1.5-pro-latest")
 
-# App configuration
+# ====== Custom CSS for Green Theme ======
+st.markdown(
+    """
+    <style>
+    :root {
+        --primary-green: #2e8b57;
+        --secondary-green: #3cb371;
+        --light-green: #e8f5e9;
+        --dark-green: #1b5e20;
+    }
+    
+    /* Main background */
+    .stApp {
+        background-color: #f5fef5;
+    }
+    
+    /* Sidebar */
+    .css-1d391kg {
+        background-color: var(--light-green) !important;
+        border-right: 1px solid var(--primary-green);
+    }
+    
+    /* Headers */
+    h1, h2, h3 {
+        color: var(--dark-green) !important;
+    }
+    
+    /* Buttons */
+    .stButton>button {
+        background-color: var(--primary-green) !important;
+        color: white !important;
+        border: none;
+    }
+    
+    .stButton>button:hover {
+        background-color: var(--dark-green) !important;
+    }
+    
+    /* Chat bubbles */
+    .stChatMessage {
+        border-radius: 12px !important;
+        padding: 12px !important;
+    }
+    
+    /* User message bubble */
+    [data-testid="user"] {
+        background-color: #e3f2fd !important;  /* Light blue for contrast */
+    }
+    
+    /* Assistant message bubble */
+    [data-testid="assistant"] {
+        background-color: var(--light-green) !important;
+        border-left: 3px solid var(--primary-green) !important;
+    }
+    
+    /* Metric cards */
+    .stMetric {
+        background-color: white;
+        border: 1px solid var(--primary-green);
+        border-radius: 8px;
+        padding: 10px;
+    }
+    
+    /* Input box */
+    .stTextInput>div>div>input {
+        border: 1px solid var(--primary-green) !important;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+# ====== App Configuration ======
 st.set_page_config(
     page_title="🌿 Personal Environmental Impact Tracker", 
     layout="centered",
-    page_icon="🌍"
+    page_icon="🌍",
+    initial_sidebar_state="expanded"
 )
-st.title("🌱 Personal Environmental Impact Tracker")
+
+# Header with logo-like styling
+st.markdown(
+    """
+    <div style="background-color: #2e8b57; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
+        <h1 style="color: white; text-align: center; margin: 0;">🌱 Personal Environmental Impact Tracker</h1>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
 st.caption("Track your daily activities and learn how to reduce your carbon footprint!")
 
-# Initialize session state
+# ====== Session State Initialization ======
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
     st.session_state.activities = []
     st.session_state.total_footprint = 0.0
     st.session_state.first_interaction = True
 
-# Display chat history
+# ====== Chat Display ======
 for msg in st.session_state.chat_history:
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
 
-# Initial assistant greeting
+# ====== Initial Greeting ======
 if st.session_state.first_interaction:
     welcome = """
     Hi there! 🌍 I'm your eco-assistant. Tell me about your daily activities and I'll calculate your carbon footprint.
     
     **Examples:**
-    - "I drove 15 km to work in a petrol car"
-    - "Ate a beef burger for lunch"
-    - "Used my AC for 4 hours"
-    - "Took the bus for 10 km"
+    - 🚗 "I drove 15 km to work in a petrol car"
+    - 🍔 "Ate a beef burger for lunch"
+    - ❄️ "Used my AC for 4 hours"
+    - 🚌 "Took the bus for 10 km"
     """
     st.session_state.chat_history.append({"role": "assistant", "content": welcome})
     with st.chat_message("assistant"):
         st.markdown(welcome)
     st.session_state.first_interaction = False
 
-# Chat input
+# ====== User Input & Processing ======
 user_input = st.chat_input("Describe your activity (e.g., 'I drove 10 km')")
 
 if user_input:
@@ -83,7 +166,7 @@ if user_input:
         """
         
         with st.chat_message("assistant"):
-            with st.spinner("Calculating your daily impact..."):
+            with st.spinner("🌱 Calculating your daily impact..."):
                 try:
                     response = model.generate_content(summary_prompt)
                     summary = response.text
@@ -125,7 +208,7 @@ if user_input:
         """
         
         with st.chat_message("assistant"):
-            with st.spinner("Analyzing your activity..."):
+            with st.spinner("🌍 Analyzing your activity..."):
                 try:
                     response = model.generate_content(prompt)
                     reply = response.text
@@ -149,15 +232,42 @@ if user_input:
                     st.error(error_msg)
                     st.session_state.chat_history.append({"role": "assistant", "content": error_msg})
 
-# Sidebar with summary
+# ====== Sidebar ======
 with st.sidebar:
-    st.subheader("Today's Summary")
+    st.markdown(
+        """
+        <div style="background-color: #2e8b57; padding: 10px; border-radius: 8px; margin-bottom: 15px;">
+            <h3 style="color: white; text-align: center;">📊 Today's Summary</h3>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+    
     if st.session_state.activities:
-        st.metric("Total Footprint", f"{st.session_state.total_footprint:.2f} kg CO2")
+        # Card-style metric
+        st.markdown(
+            f"""
+            <div style="background-color: white; border: 1px solid #2e8b57; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
+                <h4 style="color: #1b5e20; margin-top: 0;">Total Carbon Footprint</h4>
+                <h2 style="color: #2e8b57; text-align: center; margin: 0;">{st.session_state.total_footprint:.2f} kg CO2</h2>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+        
         st.write("**Activities logged:**")
         for activity in st.session_state.activities:
-            st.write(f"- {activity['activity']}: {activity['footprint']:.2f} kg")
+            st.markdown(
+                f"""
+                <div style="background-color: #e8f5e9; border-radius: 8px; padding: 8px 12px; margin-bottom: 8px;">
+                    <p style="margin: 0;">{activity['activity']}: <strong>{activity['footprint']:.2f} kg</strong></p>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
     else:
-        st.write("No activities logged yet")
+        st.info("No activities logged yet")
     
-    st.button("Reset Session", on_click=lambda: st.session_state.clear())
+    if st.button("♻️ Reset Session", use_container_width=True):
+        st.session_state.clear()
+        st.rerun()
