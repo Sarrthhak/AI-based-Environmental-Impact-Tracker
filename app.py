@@ -18,12 +18,12 @@ model = genai.GenerativeModel(model_name="models/gemini-1.5-pro-latest")
 
 # App configuration
 st.set_page_config(
-    page_title="🌿 Personal Environmental Impact Tracker", 
+    page_title="🌿 CarbonWise", 
     layout="centered",
     page_icon="🌍"
 )
-st.title("🌱 Personal Environmental Impact Tracker")
-st.caption("Track your daily activities and learn how to reduce your carbon footprint!")
+st.title("🌱 CarbonWise : AI-based Personal Environmental Impact Tracker")
+
 
 # Initialize session state
 if "chat_history" not in st.session_state:
