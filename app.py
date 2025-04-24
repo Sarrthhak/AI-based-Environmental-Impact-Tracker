@@ -119,6 +119,7 @@ if user_input:
            - AC: 0.6 kg per hour
         4. Format response as:
            "Your [activity] → [X] kg CO2. [Impact level: 🌿/⚠️/🔴]
+           Effect: [Brief explanation of environmental impact — e.g., greenhouse gas, air pollution, deforestation, energy overuse]
            Tip: [Personalized suggestion]"
         
         If information is missing, ask ONE clarifying question.
