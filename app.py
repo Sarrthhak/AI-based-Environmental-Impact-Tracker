@@ -54,7 +54,7 @@ if st.session_state.first_interaction:
     st.session_state.first_interaction = False
 
 # Chat input
-user_input = st.chat_input("Describe your activity (e.g., 'I drove 10 km')")
+user_input = st.chat_input("Describe your activity")
 
 if user_input:
     # Add user message to chat
